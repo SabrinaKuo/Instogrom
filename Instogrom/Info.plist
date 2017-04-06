@@ -32,5 +32,9 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Need Camera privacy</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Need Photo Library privacy</string>
 </dict>
 </plist>
