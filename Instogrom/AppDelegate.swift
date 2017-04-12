@@ -17,6 +17,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+
         
         FIRApp.configure()
         
@@ -26,6 +27,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             if let user = user {
                 print("使用者 \(user.email)已經登入")
                 let viewController = storyboard.instantiateViewController(withIdentifier: "MainFlow")
+//                let nav = UINavigationController(rootViewController: viewController)
                 self.window?.rootViewController = viewController
             } else {
                 print("沒有人登入")
