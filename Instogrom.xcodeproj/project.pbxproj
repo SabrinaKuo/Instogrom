@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		811D62A41E9620EB00F6A2FC /* FeedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 811D62A31E9620EB00F6A2FC /* FeedViewController.swift */; };
+		81804F6B1EA0C99100995C51 /* MessagesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81804F6A1EA0C99100995C51 /* MessagesViewController.swift */; };
 		B222B5CB1E966CAB00CEE405 /* PostCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B222B5CA1E966CAB00CEE405 /* PostCell.swift */; };
 		B2D17CFB1E893B070056DD3C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D17CFA1E893B070056DD3C /* AppDelegate.swift */; };
 		B2D17D001E893B070056DD3C /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B2D17CFE1E893B070056DD3C /* Main.storyboard */; };
@@ -23,6 +24,7 @@
 /* Begin PBXFileReference section */
 		06E5F9E7DDFC0231DB5810B8 /* Pods-Instogrom.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Instogrom.release.xcconfig"; path = "Pods/Target Support Files/Pods-Instogrom/Pods-Instogrom.release.xcconfig"; sourceTree = "<group>"; };
 		811D62A31E9620EB00F6A2FC /* FeedViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeedViewController.swift; sourceTree = "<group>"; };
+		81804F6A1EA0C99100995C51 /* MessagesViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MessagesViewController.swift; sourceTree = "<group>"; };
 		B222B5CA1E966CAB00CEE405 /* PostCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PostCell.swift; sourceTree = "<group>"; };
 		B2D17CF71E893B070056DD3C /* Instogrom.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Instogrom.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2D17CFA1E893B070056DD3C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -75,6 +77,7 @@
 				B2D17D0E1E893E3D0056DD3C /* SignInViewController.swift */,
 				B2D17D101E8946230056DD3C /* SignUpViewController.swift */,
 				811D62A31E9620EB00F6A2FC /* FeedViewController.swift */,
+				81804F6A1EA0C99100995C51 /* MessagesViewController.swift */,
 				B2D17D121E89547F0056DD3C /* MainViewController.swift */,
 				B222B5CA1E966CAB00CEE405 /* PostCell.swift */,
 				B2D17CFE1E893B070056DD3C /* Main.storyboard */,
@@ -229,6 +232,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B2D17D111E8946230056DD3C /* SignUpViewController.swift in Sources */,
+				81804F6B1EA0C99100995C51 /* MessagesViewController.swift in Sources */,
 				B2D17CFB1E893B070056DD3C /* AppDelegate.swift in Sources */,
 				811D62A41E9620EB00F6A2FC /* FeedViewController.swift in Sources */,
 				B2D17D0F1E893E3D0056DD3C /* SignInViewController.swift in Sources */,

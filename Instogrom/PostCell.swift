@@ -12,4 +12,5 @@ class PostCell: UITableViewCell {
 
     @IBOutlet weak var emailLabel: UILabel!
     @IBOutlet weak var photoImageView: UIImageView!
+    @IBOutlet weak var likeButton: UIButton!
 }

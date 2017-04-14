@@ -16,11 +16,16 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
     
     var ref: FIRDatabaseReference!
     var postsRef: FIRDatabaseReference!
+    var messageRef: FIRDatabaseReference!
+    var likeRef: FIRDatabaseReference!
     var dataSource: FUITableViewDataSource!
     
     override func viewDidLoad() {
         ref = FIRDatabase.database().reference()
         postsRef = ref.child("posts")
+        messageRef = ref.child("messages")
+        likeRef = ref.child("likes")
+        
 //        ref.updateChildValues(["123": "abc"])
         
         tableView.rowHeight = UITableViewAutomaticDimension
@@ -28,9 +33,15 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
         
         let query = postsRef.queryOrdered(byChild: "postDateReversed")
         dataSource = tableView.bind(to: query) { (tableView, indexPath, snapshot) -> UITableViewCell in
+            
             let cell = tableView.dequeueReusableCell(withIdentifier: "PostCell", for: indexPath) as! PostCell
             
             if let postData = snapshot.value as? [String: Any] {
+                
+                cell.likeButton.tag = postData["postDate"] as! Int
+                cell.likeButton.addTarget(self, action:#selector(FeedViewController.likeTapped(_:)), for: UIControlEvents.touchUpInside)
+
+                
                 cell.emailLabel.text = postData["email"] as? String
                 
                 let imageURLString = postData["imageURL"] as! String
@@ -45,6 +56,26 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
     
     @IBAction func signOut(_ sender: Any) {
         try!FIRAuth.auth()?.signOut()
+    }
+    
+    @IBAction func likeTapped(_ sender: UIButton) {
+        debugPrint(sender.tag)
+        
+        if FIRAuth.auth()?.currentUser == nil {
+            print("no one login, can't upload")
+            return
+        }
+        
+//        let likeKey = sender.tag as! String
+//        likeRef.child(likeKey)
+//        let currentUser = (FIRAuth.auth()?.currentUser)!
+//        
+//        let post : [String: Any] = [
+//            "uid" : currentUser
+//        ]
+//        
+//        likeRef.updateChildValues(post)
+        
     }
     
     @IBAction func addPhotoTapped(_ sender: Any) {
