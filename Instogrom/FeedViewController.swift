@@ -12,7 +12,7 @@ import FirebaseDatabaseUI
 import SDWebImage
 import SVProgressHUD
 
-class FeedViewController: UITableViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+class FeedViewController: UITableViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate, myTableDelegate {
     
     var ref: FIRDatabaseReference!
     var postsRef: FIRDatabaseReference!
@@ -49,6 +49,10 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
                 
                 cell.likeButton.tag = indexPath.row
                 cell.likeButton.addTarget(self, action:#selector(FeedViewController.likeTapped(_:)), for: UIControlEvents.touchUpInside)
+                cell.sharedButton.tag = indexPath.row
+                cell.sharedButton.addTarget(self, action: #selector(FeedViewController.sharedTapped(_:)), for: UIControlEvents.touchUpInside)
+                
+                cell.delegate = self
                 
                 if let userID = postData["authorUID"] as? String {
                     self.profileRef.child(userID).observeSingleEvent(of: .value, with: { (snapshot) in
@@ -66,11 +70,15 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
                 if let likeID = postData["postID"] as? String {
                     self.likeRef.child(likeID).observeSingleEvent(of: .value, with: { snapshot in
                         if let value = snapshot.value as? NSDictionary {
+                            cell.likesView.isHidden = false
+                            
+                            cell.likesLabel.text = "\(value.count)個讚"
                             if value[currentUserID] != nil {
                                 cell.likeButton.setImage(UIImage(named: "like"), for: .normal)
                             }
+                        } else {
+                            cell.likesView.isHidden = true
                         }
-                        
                     })
                 }
                 
@@ -88,13 +96,55 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
 
     }
     
+    @IBAction func sharedTapped(_ sender: UIButton) {
+        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        let snapshot = dataSource.snapshot(at: sender.tag)
+        
+        if let value = snapshot.value as? NSDictionary, let imageURLString = value["imageURL"] as? String {
+            
+            if let imageURL = URL(string: imageURLString) {
+                let copyAction = UIAlertAction(title: "複製圖片連結", style: .default) { action in
+                    UIPasteboard.general.url = imageURL
+                }
+                
+                let lineAction = UIAlertAction(title: "在LINE分享照片", style: .default) { action in
+                    if let appUrl = URL(string: "line://msg/text/" + "\(imageURL)") {
+                        if #available(iOS 10.0, *) {
+                            UIApplication.shared.open(appUrl, options: [:], completionHandler: nil)
+                        }
+                    } else {
+                        let itunesURL = URL(string: "itms-apps://itunes.apple.com/app/id443904275")!
+                        if #available(iOS 10.0, *) {
+                            UIApplication.shared.open(itunesURL, options: [:], completionHandler: nil)
+                        } else {
+                            // Fallback on earlier versions
+                        }
+                    }
+                    
+                }
+                
+                let cancelAction = UIAlertAction(title: "取消", style: .cancel) { (action) in
+                }
+                
+                actionSheet.addAction(copyAction)
+                actionSheet.addAction(lineAction)
+                actionSheet.addAction(cancelAction)
+                
+                self.present(actionSheet, animated: true, completion: nil)
+
+            }
+        }
+        
+    }
+    
     @IBAction func likeTapped(_ sender: UIButton) {
         debugPrint(sender.tag)
         
         let userID = (FIRAuth.auth()?.currentUser?.uid)!
         let snapshot = dataSource.snapshot(at: sender.tag)
         
-        var likeData: [String: Any] = [
+        let likeData: [String: Any] = [
              userID : true
         ]
         
@@ -114,8 +164,34 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
             
         }
         
+    }
+
+    func myTableDelegate(sender: UILongPressGestureRecognizer){
         
-        
+        if sender.state == UIGestureRecognizerState.began {
+            let location = sender.location(in: self.tableView)
+            if let indexPath = self.tableView.indexPathForRow(at: location) {
+                
+                let snapshot = dataSource.snapshot(at: indexPath.row)
+                if let value = snapshot.value as? NSDictionary {
+                    
+                    let alerConroller = UIAlertController(title: nil, message: "刪除這則貼文", preferredStyle: .alert)
+                    let okAction = UIAlertAction(title: "OK", style: .default, handler: { action in
+                        let postID = value["postID"] as? String
+                        self.postsRef.child(postID!).removeValue()
+                    })
+                    
+                    let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+                    
+                    alerConroller.addAction(okAction)
+                    alerConroller.addAction(cancelAction)
+                    
+                    self.present(alerConroller, animated: true, completion: nil)
+                }
+                
+            }
+            
+        }
     }
     
 }
