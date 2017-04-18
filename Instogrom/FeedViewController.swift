@@ -18,11 +18,18 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
     var postsRef: FIRDatabaseReference!
     var messageRef: FIRDatabaseReference!
     var likeRef: FIRDatabaseReference!
+    var profileRef: FIRDatabaseReference!
     var dataSource: FUITableViewDataSource!
+    
+    var userName: String!
+    var avatarImageURL: URL!
+    var selectedPostID: String!
+    
     
     override func viewDidLoad() {
         ref = FIRDatabase.database().reference()
         postsRef = ref.child("posts")
+        profileRef = ref.child("profile")
         messageRef = ref.child("messages")
         likeRef = ref.child("likes")
         
@@ -31,6 +38,8 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 410
         
+        let currentUserID = (FIRAuth.auth()?.currentUser?.uid)!
+        
         let query = postsRef.queryOrdered(byChild: "postDateReversed")
         dataSource = tableView.bind(to: query) { (tableView, indexPath, snapshot) -> UITableViewCell in
             
@@ -38,11 +47,36 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
             
             if let postData = snapshot.value as? [String: Any] {
                 
-                cell.likeButton.tag = postData["postDate"] as! Int
+                cell.likeButton.tag = indexPath.row
                 cell.likeButton.addTarget(self, action:#selector(FeedViewController.likeTapped(_:)), for: UIControlEvents.touchUpInside)
-
                 
-                cell.emailLabel.text = postData["email"] as? String
+                if let userID = postData["authorUID"] as? String {
+                    self.profileRef.child(userID).observeSingleEvent(of: .value, with: { (snapshot) in
+                        if let value = snapshot.value as? NSDictionary {
+                            self.userName = value["username"] as! String
+                            let avatarURLString = value["photoURL"] as! String
+                            self.avatarImageURL = URL(string: avatarURLString)!
+                            
+                            cell.userNameLabel.text = self.userName
+                            cell.avatarImageView.sd_setImage(with: self.avatarImageURL)
+                        }
+                    })
+                }
+                
+                if let likeID = postData["postID"] as? String {
+                    self.likeRef.child(likeID).observeSingleEvent(of: .value, with: { snapshot in
+                        if let value = snapshot.value as? NSDictionary {
+                            if value[currentUserID] != nil {
+                                cell.likeButton.setImage(UIImage(named: "like"), for: .normal)
+                            }
+                        }
+                        
+                    })
+                }
+                
+                if (cell.userNameLabel.text?.isEmpty)! {
+                    cell.userNameLabel.text = postData["email"] as? String
+                }
                 
                 let imageURLString = postData["imageURL"] as! String
                 let imageURL = URL(string: imageURLString)!
@@ -51,126 +85,37 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
             }
             return cell
         }
-    }
-    
-    
-    @IBAction func signOut(_ sender: Any) {
-        try!FIRAuth.auth()?.signOut()
+
     }
     
     @IBAction func likeTapped(_ sender: UIButton) {
         debugPrint(sender.tag)
         
-        if FIRAuth.auth()?.currentUser == nil {
-            print("no one login, can't upload")
-            return
-        }
+        let userID = (FIRAuth.auth()?.currentUser?.uid)!
+        let snapshot = dataSource.snapshot(at: sender.tag)
         
-//        let likeKey = sender.tag as! String
-//        likeRef.child(likeKey)
-//        let currentUser = (FIRAuth.auth()?.currentUser)!
-//        
-//        let post : [String: Any] = [
-//            "uid" : currentUser
-//        ]
-//        
-//        likeRef.updateChildValues(post)
-        
-    }
-    
-    @IBAction func addPhotoTapped(_ sender: Any) {
-        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        let picker = UIImagePickerController()
-        picker.delegate = self
-        
-        if UIImagePickerController.isSourceTypeAvailable(.camera) {
-            let cameraAction = UIAlertAction(title: "拍照", style: .default) { action in
-                picker.sourceType = .camera
-                self.present(picker, animated: true, completion: nil)
-            }
-            actionSheet.addAction(cameraAction)
-        }
-        
-        if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
-            let photoAction = UIAlertAction(title: "選取照片", style: .default) { action in
-                picker.sourceType = .photoLibrary
-                self.present(picker, animated: true, completion: nil)
-            }
-            actionSheet.addAction(photoAction)
-        }
-        
-        let cancelAction = UIAlertAction(title: "取消", style: .cancel) { action in
-        }
-        actionSheet.addAction(cancelAction)
-
-        self.present(actionSheet, animated: true, completion: nil)
-    }
-    
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        
-        
-        let image = info[UIImagePickerControllerOriginalImage] as! UIImage
-        
-        let postRef = postsRef.childByAutoId()
-        let postKey = postRef.key
-        
-        if FIRAuth.auth()?.currentUser == nil {
-            print("no one login, can't upload")
-            return
-        }
-        
-        let currentUser = (FIRAuth.auth()?.currentUser)!
-        
-        var postData: [String: Any] = [
-            "authorUID" : currentUser.uid,
-            "email" : currentUser.email!,
-            "imagePath" : "",
-            "imageURL": "",
-            "postDate": 0,
-            "postDateReversed": 0
+        var likeData: [String: Any] = [
+             userID : true
         ]
         
         
-        if let data = UIImageJPEGRepresentation(image, 0.7) {
-            let metaData = FIRStorageMetadata()
-            metaData.contentType = "image/jpeg"
+        if let value = snapshot.value as? NSDictionary {
+            let likeID = value["postID"] as? String
             
-            let imageRef = FIRStorage.storage().reference().child("photos/\(postKey).jpg")
+            let selectedLikeRef = likeRef.child(likeID!)
             
-            SVProgressHUD.setDefaultMaskType(.black)
-            SVProgressHUD.showProgress(0)
-            
-            let uploadTask = imageRef.put(data, metadata: metaData) { metadata, error in
-                
-                SVProgressHUD.dismiss()
-                guard let metadata = metadata else {
-                    print("檔案上傳失敗")
-                    return
-                }
-                
-                print("檔案上傳完成了")
-                
-                postData["imagePath"] = imageRef.fullPath
-                postData["imageURL"] = metadata.downloadURL()!.absoluteString
-                
-                let now = Date()
-                postData["postDate"] = Int(round(now.timeIntervalSince1970 * 1000))
-                postData["postDateReversed"] = Int(round(now.timeIntervalSince1970 * 1000)) * -1
-                
-                postRef.updateChildValues(postData)
+            if (sender.imageView?.image == UIImage(named:"like")) {
+                sender.setImage(UIImage(named: "unlike"), for: .normal)
+                selectedLikeRef.child(userID).removeValue()
+            } else {
+                sender.setImage(UIImage(named: "like"), for: .normal)
+                selectedLikeRef.updateChildValues(likeData)
             }
             
-            uploadTask.observe(.progress, handler: { (snapshot) in
-                guard let progress = snapshot.progress else {
-                    return
-                }
-                
-                SVProgressHUD.showProgress(Float(progress.fractionCompleted))
-            })
         }
         
-        dismiss(animated: true, completion: nil)
+        
+        
     }
-    
     
 }

@@ -47,6 +47,7 @@ class NewFeedViewController: UITableViewController, UIImagePickerControllerDeleg
             "email" : currentUser.email!,
             "imagePath" : "",
             "imageURL": "",
+            "postID" : postKey,
             "postDate": 0,
             "postDateReversed": 0
         ]

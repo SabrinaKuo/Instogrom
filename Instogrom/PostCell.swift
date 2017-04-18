@@ -10,7 +10,8 @@ import UIKit
 
 class PostCell: UITableViewCell {
 
-    @IBOutlet weak var emailLabel: UILabel!
+    @IBOutlet weak var avatarImageView: UIImageView!
     @IBOutlet weak var photoImageView: UIImageView!
     @IBOutlet weak var likeButton: UIButton!
+    @IBOutlet weak var userNameLabel: UILabel!
 }

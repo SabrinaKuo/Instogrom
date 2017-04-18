@@ -9,12 +9,14 @@
 import UIKit
 import Firebase
 import SVProgressHUD
+import SDWebImage
 
 class ProfileViewController: UITableViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
     var image: UIImage!
     var ref: FIRDatabaseReference!
     var profileRef: FIRDatabaseReference!
+    var email: String!
     @IBOutlet weak var avatarImageView: UIImageView!
     @IBOutlet weak var nameTextField: UITextField!
     
@@ -24,11 +26,34 @@ class ProfileViewController: UITableViewController, UIImagePickerControllerDeleg
         
         ref = FIRDatabase.database().reference()
         profileRef = ref.child("profile")
+        
+        let userID = FIRAuth.auth()?.currentUser?.uid
+        profileRef.child(userID!).observeSingleEvent(of: .value, with: { (snapshot) in
+            let value = snapshot.value as? NSDictionary
+            
+            if value != nil {
+                self.nameTextField.text = value?["username"] as? String ?? ""
+                self.email = value?["email"] as! String
+                let imageURLString = value?["photoURL"] as! String
+                let imageURL = URL(string: imageURLString)!
+                
+                self.avatarImageView.sd_setImage(with: imageURL)
+            }
+        })
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "chagePassword" {
+           let vc = segue.destination as! PasswordViewController
+           vc.email = self.email
+        }
     }
 
+    @IBAction func signOut(_ sender: Any) {
+        try?FIRAuth.auth()?.signOut()
+    }
+    
     @IBAction func completeEdit(_ sender: Any) {
-//        let postRef = self.profileRef.childByAutoId()
-//        let postKey = postRef.key
         
         if FIRAuth.auth()?.currentUser == nil {
             print("no one login, can't upload")
@@ -37,10 +62,13 @@ class ProfileViewController: UITableViewController, UIImagePickerControllerDeleg
         
         let currentUser = (FIRAuth.auth()?.currentUser)!
         
+        let userID = currentUser.uid
+        let postRef = self.profileRef.child("\(userID)")
+        
         var profileData: [String: Any] = [
-            "authorUID" : currentUser.uid,
+            "authorUID" : userID,
             "email" : currentUser.email!,
-            "name" : nameTextField.text,
+            "username" : nameTextField.text,
             "photoPath" : "",
             "photoURL" : "",
             
@@ -50,7 +78,7 @@ class ProfileViewController: UITableViewController, UIImagePickerControllerDeleg
             let mataData = FIRStorageMetadata()
             mataData.contentType = "image/jpeg"
             
-            let imageRef = FIRStorage.storage().reference().child("photos\(currentUser.uid).jpg")
+            let imageRef = FIRStorage.storage().reference().child("photos/\(userID).jpg")
             
             SVProgressHUD.setDefaultMaskType(.black)
             SVProgressHUD.showProgress(0)
@@ -69,7 +97,7 @@ class ProfileViewController: UITableViewController, UIImagePickerControllerDeleg
                 profileData["photoPath"] = imageRef.fullPath
                 profileData["photoURL"] = metadata.downloadURL()!.absoluteString
                 
-                self.profileRef.updateChildValues(profileData)
+                postRef.updateChildValues(profileData)
                 
             }
             
