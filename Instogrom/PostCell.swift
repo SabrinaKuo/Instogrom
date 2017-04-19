@@ -18,6 +18,9 @@ class PostCell: UITableViewCell {
     @IBOutlet weak var likesView: UIView!
     @IBOutlet weak var sharedButton: UIButton!
     
+    @IBOutlet weak var msgName: UILabel!
+    @IBOutlet weak var msgLabel: UILabel!
+    
     var delegate: myTableDelegate?
     
     override func awakeFromNib() {
@@ -26,6 +29,9 @@ class PostCell: UITableViewCell {
         let longPress = UILongPressGestureRecognizer(target: self, action: #selector(PostCell.longPress(sender:)))
         
         self.addGestureRecognizer(longPress)
+        
+        avatarImageView.layer.borderWidth = 0.1
+        avatarImageView.layer.borderColor = UIColor.lightGray.cgColor
     }
     
     func longPress(sender: UILongPressGestureRecognizer) {

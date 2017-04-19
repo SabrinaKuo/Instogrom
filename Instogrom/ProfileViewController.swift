@@ -18,7 +18,7 @@ class ProfileViewController: UITableViewController, UIImagePickerControllerDeleg
     var profileRef: FIRDatabaseReference!
     var email: String!
     @IBOutlet weak var avatarImageView: UIImageView!
-    @IBOutlet weak var nameTextField: UITextField!
+    @IBOutlet weak var titleLabel: UINavigationItem!
     
    
     override func viewDidLoad() {
@@ -32,7 +32,7 @@ class ProfileViewController: UITableViewController, UIImagePickerControllerDeleg
             let value = snapshot.value as? NSDictionary
             
             if value != nil {
-                self.nameTextField.text = value?["username"] as? String ?? ""
+                self.titleLabel.title = value?["username"] as? String ?? ""
                 self.email = value?["email"] as! String
                 let imageURLString = value?["photoURL"] as! String
                 let imageURL = URL(string: imageURLString)!
@@ -65,10 +65,13 @@ class ProfileViewController: UITableViewController, UIImagePickerControllerDeleg
         let userID = currentUser.uid
         let postRef = self.profileRef.child("\(userID)")
         
+        let email = currentUser.email!
+        let name = email.components(separatedBy: "@")
+        
         var profileData: [String: Any] = [
             "authorUID" : userID,
             "email" : currentUser.email!,
-            "username" : nameTextField.text,
+            "username" : name.first!,
             "photoPath" : "",
             "photoURL" : "",
             
@@ -78,7 +81,7 @@ class ProfileViewController: UITableViewController, UIImagePickerControllerDeleg
             let mataData = FIRStorageMetadata()
             mataData.contentType = "image/jpeg"
             
-            let imageRef = FIRStorage.storage().reference().child("photos/\(userID).jpg")
+            let imageRef = FIRStorage.storage().reference().child("photos/avatar/\(userID).jpg")
             
             SVProgressHUD.setDefaultMaskType(.black)
             SVProgressHUD.showProgress(0)

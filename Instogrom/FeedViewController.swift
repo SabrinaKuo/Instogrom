@@ -21,7 +21,6 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
     var profileRef: FIRDatabaseReference!
     var dataSource: FUITableViewDataSource!
     
-    var userName: String!
     var avatarImageURL: URL!
     var selectedPostID: String!
     
@@ -33,7 +32,6 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
         messageRef = ref.child("messages")
         likeRef = ref.child("likes")
         
-//        ref.updateChildValues(["123": "abc"])
         
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 410
@@ -57,18 +55,22 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
                 if let userID = postData["authorUID"] as? String {
                     self.profileRef.child(userID).observeSingleEvent(of: .value, with: { (snapshot) in
                         if let value = snapshot.value as? NSDictionary {
-                            self.userName = value["username"] as! String
                             let avatarURLString = value["photoURL"] as! String
                             self.avatarImageURL = URL(string: avatarURLString)!
                             
-                            cell.userNameLabel.text = self.userName
+                            cell.userNameLabel.text = value["username"] as? String
                             cell.avatarImageView.sd_setImage(with: self.avatarImageURL)
+                        } else {
+                            let email = postData["email"] as! String
+                            let name = email.components(separatedBy: "@")
+                            cell.userNameLabel.text = name.first!
+                            
                         }
                     })
                 }
                 
-                if let likeID = postData["postID"] as? String {
-                    self.likeRef.child(likeID).observeSingleEvent(of: .value, with: { snapshot in
+                if let postID = postData["postID"] as? String {
+                    self.likeRef.child(postID).observeSingleEvent(of: .value, with: { snapshot in
                         if let value = snapshot.value as? NSDictionary {
                             cell.likesView.isHidden = false
                             
@@ -77,13 +79,21 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
                                 cell.likeButton.setImage(UIImage(named: "like"), for: .normal)
                             }
                         } else {
-                            cell.likesView.isHidden = true
+                            cell.likeButton.setImage(UIImage(named: "unlike"), for: .normal)
+                            cell.likesLabel.text = ""
                         }
                     })
-                }
-                
-                if (cell.userNameLabel.text?.isEmpty)! {
-                    cell.userNameLabel.text = postData["email"] as? String
+                    
+                    self.messageRef.child(postID).observeSingleEvent(of: .value, with: { snapshot in
+                        if let value = snapshot.value as? NSDictionary {
+                            cell.msgName.text = value["name"] as? String
+                            cell.msgLabel.text = value["Message"] as? String
+                        } else {
+                            cell.msgName.text = ""
+                            cell.msgLabel.text = ""
+                        }
+                        
+                    })
                 }
                 
                 let imageURLString = postData["imageURL"] as! String
@@ -163,6 +173,8 @@ class FeedViewController: UITableViewController, UINavigationControllerDelegate,
             }
             
         }
+        
+        self.tableView.reloadData()
         
     }
 

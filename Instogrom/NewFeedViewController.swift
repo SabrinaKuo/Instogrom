@@ -14,20 +14,32 @@ class NewFeedViewController: UITableViewController, UIImagePickerControllerDeleg
 
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var addButton: UIButton!
+    @IBOutlet weak var addPhoto: UIButton!
+    @IBOutlet weak var photoTextField: UITextField!
     
     var image: UIImage?
     var ref: FIRDatabaseReference!
     var postsRef: FIRDatabaseReference!
+    var messagesRef: FIRDatabaseReference!
+    var profileRef: FIRDatabaseReference!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        print("viewDidLoad")
         ref = FIRDatabase.database().reference()
         postsRef = ref.child("posts")
+        messagesRef = ref.child("messages")
+        profileRef = ref.child("profile")
         
         tableView.tableFooterView = UIView(frame: CGRect.zero)
         addButton.layer.borderWidth = 2
         addButton.layer.borderColor = UIColor.gray.cgColor
+        
+        addPhoto.layer.borderWidth = 1
+        addPhoto.layer.borderColor = UIColor.lightGray.cgColor
+    }
+    
+    @IBAction func addPhotoTapped(_ sender: Any) {
         startImagePicker()
     }
     
@@ -40,6 +52,14 @@ class NewFeedViewController: UITableViewController, UIImagePickerControllerDeleg
             return
         }
         
+        postPhoto(postRef: postRef, postKey: postKey)
+        postPhotoMessage(postID: postKey)
+        
+        self.tabBarController?.selectedIndex = 0
+        
+    }
+    
+    func postPhoto(postRef: FIRDatabaseReference, postKey: String) {
         let currentUser = (FIRAuth.auth()?.currentUser)!
         
         var postData: [String: Any] = [
@@ -56,7 +76,7 @@ class NewFeedViewController: UITableViewController, UIImagePickerControllerDeleg
             let mataData = FIRStorageMetadata()
             mataData.contentType = "image/jpeg"
             
-            let imageRef = FIRStorage.storage().reference().child("photos\(postKey).jpg")
+            let imageRef = FIRStorage.storage().reference().child("photos/\(postKey).jpg")
             
             SVProgressHUD.setDefaultMaskType(.black)
             SVProgressHUD.showProgress(0)
@@ -92,9 +112,32 @@ class NewFeedViewController: UITableViewController, UIImagePickerControllerDeleg
             }
             
         }
-
-        self.tabBarController?.selectedIndex = 0
+    }
+    
+    func postPhotoMessage(postID: String) {
         
+        let messageRef = messagesRef.child(postID)
+        
+        let currentUser = (FIRAuth.auth()?.currentUser)!
+        let userID = currentUser.uid
+        let userName = currentUser.email?.components(separatedBy: "@").first!
+        let message = photoTextField.text
+        
+        var messageData: [String: Any] = [
+            "authorUID" : userID,
+            "email" : currentUser.email!,
+            "name" : userName,
+            "Message": message,
+            "MessageDate" : 0,
+            "MessageReversed": 0,
+            ]
+        
+        let now = Date()
+        messageData["MessageDate"] = Int(round(now.timeIntervalSince1970 * 1000))
+        messageData["MessageReversed"] = Int(round(now.timeIntervalSince1970 * 1000)) * -1
+        messageRef.updateChildValues(messageData)
+        
+        self.photoTextField.text = ""
     }
     
     func startImagePicker() {
@@ -119,6 +162,7 @@ class NewFeedViewController: UITableViewController, UIImagePickerControllerDeleg
         }
         
         let cancelAction = UIAlertAction(title: "取消", style: .cancel) { action in
+            self.tabBarController?.selectedIndex = 0
         }
         actionSheet.addAction(cancelAction)
         
@@ -126,7 +170,7 @@ class NewFeedViewController: UITableViewController, UIImagePickerControllerDeleg
     }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        image = info[UIImagePickerControllerOriginalImage] as! UIImage
+        image = info[UIImagePickerControllerOriginalImage] as? UIImage
         
         imageView.image = image
         
