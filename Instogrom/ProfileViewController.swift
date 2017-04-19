@@ -29,12 +29,11 @@ class ProfileViewController: UITableViewController, UIImagePickerControllerDeleg
         
         let userID = FIRAuth.auth()?.currentUser?.uid
         profileRef.child(userID!).observeSingleEvent(of: .value, with: { (snapshot) in
-            let value = snapshot.value as? NSDictionary
             
-            if value != nil {
-                self.titleLabel.title = value?["username"] as? String ?? ""
-                self.email = value?["email"] as! String
-                let imageURLString = value?["photoURL"] as! String
+            if let value = snapshot.value as? NSDictionary {
+                self.titleLabel.title = value["username"] as? String ?? ""
+                self.email = value["email"] as! String
+                let imageURLString = value["photoURL"] as! String
                 let imageURL = URL(string: imageURLString)!
                 
                 self.avatarImageView.sd_setImage(with: imageURL)
